@@ -10,11 +10,11 @@ The library did not use the registry commands to configure the TWAI peripheral, 
 * Send and receive CAN Bus messages
 
 ## Usage
-Starting the TWAI periphery
-´CAN.begin(GPIO_NUM_5,GPIO_NUM_4,TWAI_SPEED_500KBPS)´
+Starting the TWAI periphery<br>
+`CAN.begin(GPIO_NUM_5,GPIO_NUM_4,TWAI_SPEED_500KBPS)`
 
-Send Message
-´CAN.write(TWAI_STD_FRAME,identifier,length,buffer)´
+Send Message<br>
+`CAN.write(TWAI_STD_FRAME,identifier,length,buffer)`
 
 ## Espressif IDF Documentation
 The Espressif IDF documentation at the link below should be reference first if you encounter any errors. Make sure you are using the most recent IDF version when writing this. 
