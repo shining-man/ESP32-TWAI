@@ -47,6 +47,7 @@ class ESP32TWAI
     esp_err_t write(TWAI_frame_type_s extd, uint32_t identifier, uint8_t length, uint8_t *buffer);
     esp_err_t read(twai_message_t* ptr_message);
     uint32_t  getAlert();
+    twai_status_info_t getStatus();
     String    getErrorText(esp_err_t errNo);
   
   private:

@@ -120,6 +120,13 @@ uint32_t ESP32TWAI::getAlert()
 }
 
 
+twai_status_info_t ESP32TWAI::getStatus()
+{
+  twai_status_info_t statusInfo;
+  esp_err_t err=twai_get_status_info(&statusInfo);
+  return statusInfo;
+}
+
 String ESP32TWAI::getErrorText(esp_err_t errNo)
 {
   String errText="";
