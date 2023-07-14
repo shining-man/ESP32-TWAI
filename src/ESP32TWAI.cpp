@@ -102,11 +102,12 @@ esp_err_t ESP32TWAI::read(twai_message_t* ptr_message)
 uint32_t ESP32TWAI::getAlert()
 {
   uint32_t u32_lAlerts;
-  switch(twai_read_alerts(&u32_lAlerts, pdMS_TO_TICKS(10)))
+  switch(twai_read_alerts(&u32_lAlerts, pdMS_TO_TICKS(20)))
   {
     case ESP_OK:
+      return u32_lAlerts;
     case ESP_ERR_TIMEOUT:
-      return 0;
+      return 0x10000;
       break;
     case ESP_ERR_INVALID_ARG:
       return 0x20000;
@@ -114,9 +115,10 @@ uint32_t ESP32TWAI::getAlert()
     case ESP_ERR_INVALID_STATE:
       return 0x30000;
       break;
+    default:
+      return u32_lAlerts;
+    break;
   }
-
-  return u32_lAlerts;
 }
 
 
