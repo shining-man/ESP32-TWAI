@@ -13,6 +13,7 @@ uint8_t u8_mLastErrorFunction;
 esp_err_t ESP32TWAI::begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud)
 {    
   twai_general_config_t configGeneral = TWAI_GENERAL_CONFIG_DEFAULT(txPin, rxPin, TWAI_MODE_NORMAL);
+  configGeneral.tx_queue_len = 10;
   if(bo_mAlert) configGeneral.alerts_enabled=TWAI_ALERT_ALL;
   else configGeneral.alerts_enabled=TWAI_ALERT_NONE;
 
@@ -71,13 +72,15 @@ esp_err_t ESP32TWAI::stop()
 esp_err_t ESP32TWAI::write(TWAI_frame_type_s extd, uint32_t identifier, uint8_t length, uint8_t *buffer)
 {
   twai_message_t tx_frame;
+  tx_frame.rtr = 0;
+  tx_frame.flags = 0;
   tx_frame.extd = extd;                  // 0=11bit, 1=29bit
   tx_frame.data_length_code = length;
   tx_frame.identifier = identifier;   
   memcpy(tx_frame.data, buffer, length);
 
   u8_mLastErrorFunction=ESP32TWAI_STAT_TRANSMIT;
-  return twai_transmit(&tx_frame, pdMS_TO_TICKS(10));
+  return twai_transmit(&tx_frame, pdMS_TO_TICKS(100));
 }
 
 esp_err_t ESP32TWAI::read(twai_message_t* ptr_message)
