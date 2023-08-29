@@ -43,6 +43,7 @@ class ESP32TWAI
   public:
     esp_err_t begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud);
     void      setAlert(bool alert);
+    void      setRxQueueLen(uint8_t rxQueueLen);
     esp_err_t stop();
     esp_err_t write(TWAI_frame_type_s extd, uint32_t identifier, uint8_t length, uint8_t *buffer);
     esp_err_t read(twai_message_t* ptr_message);

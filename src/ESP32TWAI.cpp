@@ -9,11 +9,13 @@ ESP32TWAI ESP32Twai;
 
 bool bo_mAlert=false;
 uint8_t u8_mLastErrorFunction;
+uint8_t u8_rxQueueLen=5;
 
 esp_err_t ESP32TWAI::begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud)
 {    
   twai_general_config_t configGeneral = TWAI_GENERAL_CONFIG_DEFAULT(txPin, rxPin, TWAI_MODE_NORMAL);
   configGeneral.tx_queue_len = 10;
+  configGeneral.rx_queue_len = u8_rxQueueLen;
   if(bo_mAlert) configGeneral.alerts_enabled=TWAI_ALERT_ALL;
   else configGeneral.alerts_enabled=TWAI_ALERT_NONE;
 
@@ -57,6 +59,11 @@ esp_err_t ESP32TWAI::begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud
 void ESP32TWAI::setAlert(bool alert)
 {
   bo_mAlert=alert;
+}
+
+void ESP32TWAI::setRxQueueLen(uint8_t rxQueueLen)
+{
+  u8_rxQueueLen = rxQueueLen;
 }
 
 esp_err_t ESP32TWAI::stop()
