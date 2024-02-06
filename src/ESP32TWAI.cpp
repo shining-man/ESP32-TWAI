@@ -1,26 +1,42 @@
 // Copyright (c) 2023 Tobias Himmler
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
+#include <cassert>
+#include <array> // std::size
+#include <string.h> // memcpy
 #include "ESP32TWAI.h"
 
-ESP32TWAI ESP32Twai;
+ESP32TWAI::ESP32TWAI() :
+  _alertsEnabled(false),
+  _lastErrorFunction(DriverStatus::INIT),
+  _rxQueueLen(RX_QUEUE_LENGTH_DEFAULT)
+{
+}
 
-bool bo_mAlert=false;
-uint8_t u8_mLastErrorFunction;
-uint8_t u8_rxQueueLen=5;
+ESP32TWAI::~ESP32TWAI()
+{
+  stop();
+}
+
+/* static */ ESP32TWAI& ESP32TWAI::getInstance()
+{
+	static ESP32TWAI instance;
+
+	return instance;
+}
 
 esp_err_t ESP32TWAI::begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud)
-{    
+{
   twai_general_config_t configGeneral = TWAI_GENERAL_CONFIG_DEFAULT(txPin, rxPin, TWAI_MODE_NORMAL);
-  configGeneral.tx_queue_len = 10;
-  configGeneral.rx_queue_len = u8_rxQueueLen;
-  if(bo_mAlert) configGeneral.alerts_enabled=TWAI_ALERT_ALL;
-  else configGeneral.alerts_enabled=TWAI_ALERT_NONE;
+  configGeneral.tx_queue_len = static_cast<uint32_t>(TX_QUEUE_LENGTH_DEFAULT);
+  configGeneral.rx_queue_len = static_cast<uint32_t>(_rxQueueLen);
 
-  twai_filter_config_t configFilter = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-  twai_timing_config_t configTiming;
+  configGeneral.alerts_enabled = (true == _alertsEnabled) ? TWAI_ALERT_ALL : TWAI_ALERT_NONE;
+
+  const twai_filter_config_t configFilter = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+  twai_timing_config_t configTiming {};
 
   switch(baud)
   {
@@ -43,75 +59,88 @@ esp_err_t ESP32TWAI::begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud
       configTiming = TWAI_TIMING_CONFIG_1MBITS();
       break;
     default:
-      u8_mLastErrorFunction=ESP32TWAI_STAT_SPEED;
+      _lastErrorFunction = DriverStatus::SPEED;
       return ESP_ERR_NOT_SUPPORTED;
       break;
   }
-  
-  u8_mLastErrorFunction=ESP32TWAI_STAT_DRIVER_INSTALL;
-  esp_err_t err = twai_driver_install(&configGeneral, &configTiming, &configFilter);
-  if(err!=ESP_OK) return err;
 
-  u8_mLastErrorFunction=ESP32TWAI_STAT_START;
+  _lastErrorFunction = DriverStatus::DRIVER_INSTALL;
+  const esp_err_t err = twai_driver_install(&configGeneral, &configTiming, &configFilter);
+  if(err != ESP_OK)
+    return err;
+
+  _lastErrorFunction = DriverStatus::START;
   return twai_start();
 }
 
 void ESP32TWAI::setAlert(bool alert)
 {
-  bo_mAlert=alert;
+  _alertsEnabled = alert;
 }
 
-void ESP32TWAI::setRxQueueLen(uint8_t rxQueueLen)
+void ESP32TWAI::setRxQueueLen(std::size_t rxQueueLen)
 {
-  u8_rxQueueLen = rxQueueLen;
+  _rxQueueLen = rxQueueLen;
 }
 
 esp_err_t ESP32TWAI::stop()
 {
-  u8_mLastErrorFunction=ESP32TWAI_STAT_STOP;
-  esp_err_t err = twai_stop();
-  if(err!=ESP_OK) return err;
+  _lastErrorFunction = DriverStatus::STOP;
+  const esp_err_t err = twai_stop();
+  if(err!=ESP_OK)
+    return err;
 
-  u8_mLastErrorFunction=ESP32TWAI_STAT_UNINSTALL;
+  _lastErrorFunction = DriverStatus::UNINSTALL;
   return twai_driver_uninstall();
 }
 
 esp_err_t ESP32TWAI::write(TWAI_frame_type_s extd, uint32_t identifier, uint8_t length, uint8_t *buffer)
 {
-  twai_message_t tx_frame;
+  twai_message_t tx_frame {};
   tx_frame.rtr = 0;
   tx_frame.flags = 0;
   tx_frame.extd = extd;                  // 0=11bit, 1=29bit
   tx_frame.data_length_code = length;
-  tx_frame.identifier = identifier;   
+  tx_frame.identifier = identifier;
+
+  _lastErrorFunction = DriverStatus::TRANSMIT;
+
+  // check the buffer size
+  if (std::size(tx_frame.data) < length)
+    return ESP_ERR_NO_MEM;
+
   memcpy(tx_frame.data, buffer, length);
 
-  u8_mLastErrorFunction=ESP32TWAI_STAT_TRANSMIT;
   return twai_transmit(&tx_frame, pdMS_TO_TICKS(100));
 }
 
 esp_err_t ESP32TWAI::read(twai_message_t* ptr_message)
 {
+  assert(ptr_message);
+
   twai_status_info_t statusInfo;
 
-  u8_mLastErrorFunction=ESP32TWAI_STAT_STATUS;
-  esp_err_t err=twai_get_status_info(&statusInfo);
+  _lastErrorFunction = DriverStatus::STATUS;
+  const esp_err_t err = twai_get_status_info(&statusInfo);
   if(err == ESP_OK)
   {
-    if(statusInfo.msgs_to_rx>0)
+    if(statusInfo.msgs_to_rx > 0)
     {
-      u8_mLastErrorFunction=ESP32TWAI_STAT_RECEIVE;
+      _lastErrorFunction = DriverStatus::RECEIVE;
       return twai_receive(ptr_message, pdMS_TO_TICKS(10));
     }
-    else return ESP_OK;
+    else
+    {
+      return ESP_OK;
+    }
   }
-  else return err;
+  else
+    return err;
 }
 
-
-uint32_t ESP32TWAI::getAlert()
+uint32_t ESP32TWAI::getAlert() const
 {
-  uint32_t u32_lAlerts;
+  uint32_t u32_lAlerts {};
   switch(twai_read_alerts(&u32_lAlerts, pdMS_TO_TICKS(20)))
   {
     case ESP_OK:
@@ -131,45 +160,37 @@ uint32_t ESP32TWAI::getAlert()
   }
 }
 
-
-twai_status_info_t ESP32TWAI::getStatus()
+twai_status_info_t ESP32TWAI::getStatus() const
 {
-  twai_status_info_t statusInfo;
-  esp_err_t err=twai_get_status_info(&statusInfo);
+  twai_status_info_t statusInfo {};
+  (void) twai_get_status_info(&statusInfo); // return value not used
   return statusInfo;
 }
 
-String ESP32TWAI::getErrorText(esp_err_t errNo)
+std::string ESP32TWAI::getErrorText(esp_err_t errNo) const
 {
-  String errText="";
-  switch(u8_mLastErrorFunction)
+  auto Stringify = [](DriverStatus status) constexpr
   {
-    case ESP32TWAI_STAT_DRIVER_INSTALL:
-      errText=F("TWAI INSTALL: ");
-      break;
-    case ESP32TWAI_STAT_START:
-      errText=F("TWAI START: ");
-      break;
-    case ESP32TWAI_STAT_STOP:
-      errText=F("TWAI STOP: ");
-      break;
-    case ESP32TWAI_STAT_UNINSTALL:
-      errText=F("TWAI UNINSTALL: ");
-      break;
-    case ESP32TWAI_STAT_TRANSMIT:
-      errText=F("TWAI TX: ");
-      break;
-    case ESP32TWAI_STAT_RECEIVE:
-      errText=F("TWAI RX: ");
-      break;
-    case ESP32TWAI_STAT_SPEED:
-      errText=F("TWAI SPPED: ");
-      break;
-    case ESP32TWAI_STAT_STATUS:
-      errText=F("TWAI STATUS: ");
-      break;
-  }
+    switch(status)
+    {
+      case DriverStatus::DRIVER_INSTALL:
+        return std::string("TWAI INSTALL: ");
+      case DriverStatus::START:
+        return std::string("TWAI START: ");
+      case DriverStatus::STOP:
+        return std::string("TWAI STOP: ");
+      case DriverStatus::UNINSTALL:
+        return std::string("TWAI UNINSTALL: ");
+      case DriverStatus::TRANSMIT:
+        return std::string("TWAI TX: ");
+      case DriverStatus::RECEIVE:
+        return std::string("TWAI RX: ");
+      case DriverStatus::SPEED:
+        return std::string("TWAI SPEED: ");
+      case DriverStatus::STATUS:
+        return std::string("TWAI STATUS: ");
+    }
+  };
 
-  errText += esp_err_to_name(errNo);
-  return errText;
+  return Stringify(_lastErrorFunction).append(esp_err_to_name(errNo));
 }
