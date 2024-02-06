@@ -155,7 +155,7 @@ twai_status_info_t ESP32TWAI::getStatus() const
 
 std::string ESP32TWAI::getErrorText(esp_err_t errNo) const
 {
-  auto Stringify = [](DriverStatus status) constexpr
+  auto Stringify = [](DriverStatus status)
   {
     switch(status)
     {
@@ -175,13 +175,15 @@ std::string ESP32TWAI::getErrorText(esp_err_t errNo) const
         return std::string("TWAI SPEED: ");
       case DriverStatus::STATUS:
         return std::string("TWAI STATUS: ");
+      default:
+        return std::string(); // Return empty string
     }
   };
 
   return Stringify(_lastErrorFunction).append(esp_err_to_name(errNo));
 }
 
-/*static*/ inline ESP32TWAISingleton& ESP32TWAISingleton::instance()
+/*static*/ ESP32TWAISingleton& ESP32TWAISingleton::instance()
 {
   static ESP32TWAISingleton instance;
 

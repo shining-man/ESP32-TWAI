@@ -79,8 +79,8 @@ class ESP32TWAISingleton :
 {
   // Make this class non-copyable, it`s a singleton
   public:
-    ESP32TWAISingleton(const ESP32TWAI& other) = delete;
-    ESP32TWAISingleton& operator=(const ESP32TWAI& other) = delete;
+    ESP32TWAISingleton(const ESP32TWAISingleton& other) = delete;
+    ESP32TWAISingleton& operator=(const ESP32TWAISingleton& other) = delete;
 
     /** Returns the singleton instance (static) of the ESP32TWAISingleton. */
     static ESP32TWAISingleton& instance();
