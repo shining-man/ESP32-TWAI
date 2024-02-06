@@ -1,0 +1,27 @@
+{
+  "name": "ESP32-TWAI",
+  "description": "Arduino Library for the ESP32 TWAI (CAN Bus)",
+  "keywords": "ESP32, CAN, TWAI",
+  "authors": [
+      {
+          "name": "Tobias Himmler",
+          "maintainer": true
+      }
+  ],
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/shining-man/ESP32-TWAI"
+  },
+  "version": "1.0.0",
+  "frameworks": "Arduino",
+  "build": {
+    "unflags": [
+        "-std=gnu++11",
+        "-std=gnu99"
+    ],
+    "flags":  [
+      "-std=gnu++2a",
+      "-std=gnu11"
+    ]
+}
+}
