@@ -9,9 +9,7 @@
 #include "ESP32TWAI.h"
 
 ESP32TWAI::ESP32TWAI() :
-  _alertsEnabled(false),
-  _lastErrorFunction(DriverStatus::INIT),
-  _rxQueueLen(RX_QUEUE_LENGTH_DEFAULT)
+  _lastErrorFunction(DriverStatus::INIT)
 {
 }
 
@@ -20,20 +18,18 @@ ESP32TWAI::~ESP32TWAI()
   stop();
 }
 
-/* static */ ESP32TWAI& ESP32TWAI::getInstance()
-{
-	static ESP32TWAI instance;
-
-	return instance;
-}
-
-esp_err_t ESP32TWAI::begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud)
+esp_err_t ESP32TWAI::begin(gpio_num_t rxPin,
+                           gpio_num_t txPin,
+                           TWAI_speed_s baud,
+                           bool enableAlerts,
+                           std::size_t rxQueueLength,
+                           std::size_t txQueueLength)
 {
   twai_general_config_t configGeneral = TWAI_GENERAL_CONFIG_DEFAULT(txPin, rxPin, TWAI_MODE_NORMAL);
-  configGeneral.tx_queue_len = static_cast<uint32_t>(TX_QUEUE_LENGTH_DEFAULT);
-  configGeneral.rx_queue_len = static_cast<uint32_t>(_rxQueueLen);
+  configGeneral.tx_queue_len = static_cast<uint32_t>(txQueueLength);
+  configGeneral.rx_queue_len = static_cast<uint32_t>(rxQueueLength);
 
-  configGeneral.alerts_enabled = (true == _alertsEnabled) ? TWAI_ALERT_ALL : TWAI_ALERT_NONE;
+  configGeneral.alerts_enabled = (true == enableAlerts) ? TWAI_ALERT_ALL : TWAI_ALERT_NONE;
 
   const twai_filter_config_t configFilter = TWAI_FILTER_CONFIG_ACCEPT_ALL();
   twai_timing_config_t configTiming {};
@@ -71,16 +67,6 @@ esp_err_t ESP32TWAI::begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud
 
   _lastErrorFunction = DriverStatus::START;
   return twai_start();
-}
-
-void ESP32TWAI::setAlert(bool alert)
-{
-  _alertsEnabled = alert;
-}
-
-void ESP32TWAI::setRxQueueLen(std::size_t rxQueueLen)
-{
-  _rxQueueLen = rxQueueLen;
 }
 
 esp_err_t ESP32TWAI::stop()
@@ -193,4 +179,11 @@ std::string ESP32TWAI::getErrorText(esp_err_t errNo) const
   };
 
   return Stringify(_lastErrorFunction).append(esp_err_to_name(errNo));
+}
+
+/*static*/ inline ESP32TWAISingleton& ESP32TWAISingleton::instance()
+{
+  static ESP32TWAISingleton instance;
+
+  return instance;
 }

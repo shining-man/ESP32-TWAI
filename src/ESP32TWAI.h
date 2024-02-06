@@ -11,6 +11,7 @@
 #include <driver/gpio.h>
 #include <driver/twai.h>
 
+// TODO: Would be nice to put this module into an own namespce
 
 enum TWAI_speed_s
 {
@@ -30,18 +31,18 @@ enum TWAI_frame_type_s
 
 class ESP32TWAI
 {
-  // Make this class non-copyable, because it`s a singleton
-  public:
-    ESP32TWAI(const ESP32TWAI& other) = delete;
-    ESP32TWAI& operator=(const ESP32TWAI& other) = delete;
 
   public:
-    /** Returns the singleton instance (static) of the ESP32TWAI. */
-    static ESP32TWAI& getInstance();
+    ESP32TWAI();
+    ~ESP32TWAI();
 
-    esp_err_t   begin(gpio_num_t rxPin, gpio_num_t txPin, TWAI_speed_s baud);
-    void        setAlert(bool alert);
-    void        setRxQueueLen(std::size_t rxQueueLen);
+  public:
+    esp_err_t begin(gpio_num_t rxPin,
+                    gpio_num_t txPin,
+                    TWAI_speed_s baud,
+                    bool enableAlerts = false,
+                    std::size_t rxQueueLength = RX_QUEUE_LENGTH_DEFAULT,
+                    std::size_t txQueueLength = TX_QUEUE_LENGTH_DEFAULT);
     esp_err_t   stop();
     esp_err_t   write(TWAI_frame_type_s extd, uint32_t identifier, uint8_t length, uint8_t *buffer);
     esp_err_t   read(twai_message_t* ptr_message);
@@ -65,16 +66,29 @@ class ESP32TWAI
     using DriverStatus = ESP32TWAI::DriverStatus;
 
   private:
-    // This is a Singleton, we do not allow to create an instance from outside the class!
-    ESP32TWAI();
-    ~ESP32TWAI();
+    static constexpr std::size_t RX_QUEUE_LENGTH_DEFAULT {5};
+    static constexpr std::size_t TX_QUEUE_LENGTH_DEFAULT {5};
+    DriverStatus _lastErrorFunction;
+};
+
+/**
+ * Provide a singleton wrapper for the ESP32TWAI class to support the legacy code.
+*/
+class ESP32TWAISingleton :
+  public ESP32TWAI
+{
+  // Make this class non-copyable, it`s a singleton
+  public:
+    ESP32TWAISingleton(const ESP32TWAI& other) = delete;
+    ESP32TWAISingleton& operator=(const ESP32TWAI& other) = delete;
+
+    /** Returns the singleton instance (static) of the ESP32TWAISingleton. */
+    static ESP32TWAISingleton& instance();
 
   private:
-    static constexpr std::size_t RX_QUEUE_LENGTH_DEFAULT = 5;
-    static constexpr std::size_t TX_QUEUE_LENGTH_DEFAULT = 10;
-    bool _alertsEnabled =false;
-    DriverStatus _lastErrorFunction;
-    std::size_t _rxQueueLen;
+    // don't allow public construct/destruct
+    ESP32TWAISingleton() = default;
+    ~ESP32TWAISingleton() = default;
 };
 
 /**
@@ -86,7 +100,7 @@ class ESP32TWAI
  * @endcode
  *
 */
-#define CAN (ESP32TWAI::getInstance())
+#define CAN (ESP32TWAISingleton::instance())
 
 #endif
 
