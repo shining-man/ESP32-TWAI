@@ -11,8 +11,6 @@
 #include <driver/gpio.h>
 #include <driver/twai.h>
 
-namespace esp32
-{
 namespace can
 {
 
@@ -73,6 +71,5 @@ class ESP32TWAI
 };
 
 } // namespace can
-} // namespace esp32
 
 #endif

@@ -9,8 +9,6 @@
 #include <string.h> // memcpy
 #include "ESP32TWAI.h"
 
-namespace esp32
-{
 namespace can
 {
 
@@ -187,4 +185,3 @@ std::string ESP32TWAI::getErrorText(esp_err_t errNo) const
 }
 
 } // namespace can
-} // namespace esp32
