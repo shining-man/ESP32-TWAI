@@ -182,10 +182,3 @@ std::string ESP32TWAI::getErrorText(esp_err_t errNo) const
 
   return Stringify(_lastErrorFunction).append(esp_err_to_name(errNo));
 }
-
-/*static*/ ESP32TWAISingleton& ESP32TWAISingleton::instance()
-{
-  static ESP32TWAISingleton instance;
-
-  return instance;
-}

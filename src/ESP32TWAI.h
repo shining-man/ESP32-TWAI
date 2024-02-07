@@ -71,37 +71,4 @@ class ESP32TWAI
     DriverStatus _lastErrorFunction;
 };
 
-/**
- * Provide a singleton wrapper for the ESP32TWAI class to support the legacy code.
-*/
-class ESP32TWAISingleton :
-  public ESP32TWAI
-{
-  // Make this class non-copyable, it`s a singleton
-  public:
-    ESP32TWAISingleton(const ESP32TWAISingleton& other) = delete;
-    ESP32TWAISingleton& operator=(const ESP32TWAISingleton& other) = delete;
-
-    /** Returns the singleton instance (static) of the ESP32TWAISingleton. */
-    static ESP32TWAISingleton& instance();
-
-  private:
-    // don't allow public construct/destruct
-    ESP32TWAISingleton() = default;
-    ~ESP32TWAISingleton() = default;
-};
-
-/**
- * The following #define can be used to access the singleton object of the ESP32TWAI.
- * The getInstance() methods takes care to create the object on the first call.
- * @code
- * CAN.begin(GPIO_NUM_5,GPIO_NUM_4,TWAI_SPEED_250KBPS);
- * twai_status_info_t canStatus = CAN.getStatus();
- * @endcode
- *
-*/
-#define CAN (ESP32TWAISingleton::instance())
-
 #endif
-
-
