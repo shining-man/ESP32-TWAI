@@ -11,27 +11,29 @@
 #include <driver/gpio.h>
 #include <driver/twai.h>
 
-// TODO: Would be nice to put this module into an own namespce
-
-enum TWAI_speed_s
+namespace esp32
 {
-  TWAI_SPEED_100KBPS = 100,
-  TWAI_SPEED_125KBPS = 125,
-  TWAI_SPEED_250KBPS = 250,
-  TWAI_SPEED_500KBPS = 500,
-  TWAI_SPEED_800KBPS = 800,
-  TWAI_SPEED_1MBPS   = 1000
+namespace can
+{
+
+enum class Baudrate
+{
+  BAUD_100KBPS = 100,
+  BAUD_125KBPS = 125,
+  BAUD_250KBPS = 250,
+  BAUD_500KBPS = 500,
+  BAUD_800KBPS = 800,
+  BAUD_1MBPS   = 1000
 };
 
-enum TWAI_frame_type_s
+enum class FrameType
 {
-  TWAI_STD_FRAME  = 0,
-  TWAI_EXTD_FRAME = 1
+  STD_FRAME  = 0,
+  EXTD_FRAME = 1
 };
 
 class ESP32TWAI
 {
-
   public:
     ESP32TWAI();
     ~ESP32TWAI();
@@ -39,12 +41,12 @@ class ESP32TWAI
   public:
     esp_err_t begin(gpio_num_t rxPin,
                     gpio_num_t txPin,
-                    TWAI_speed_s baud,
+                    Baudrate baud,
                     bool enableAlerts = false,
                     std::size_t rxQueueLength = RX_QUEUE_LENGTH_DEFAULT,
                     std::size_t txQueueLength = TX_QUEUE_LENGTH_DEFAULT);
     esp_err_t   stop();
-    esp_err_t   write(TWAI_frame_type_s extd, uint32_t identifier, uint8_t length, uint8_t *buffer);
+    esp_err_t   write(FrameType extd, uint32_t identifier, uint8_t length, uint8_t *buffer);
     esp_err_t   read(twai_message_t* ptr_message);
     uint32_t    getAlert() const;
     twai_status_info_t getStatus() const;
@@ -63,12 +65,14 @@ class ESP32TWAI
       SPEED          = 0x7,
       STATUS         = 0x8
     };
-    using DriverStatus = ESP32TWAI::DriverStatus;
 
   private:
     static constexpr std::size_t RX_QUEUE_LENGTH_DEFAULT {5};
     static constexpr std::size_t TX_QUEUE_LENGTH_DEFAULT {5};
     DriverStatus _lastErrorFunction;
 };
+
+} // namespace can
+} // namespace esp32
 
 #endif

@@ -4,9 +4,15 @@
 // https://opensource.org/licenses/MIT
 
 #include <cassert>
-#include <array> // std::size
+#include <array>    // std::size
+#include <string>
 #include <string.h> // memcpy
 #include "ESP32TWAI.h"
+
+namespace esp32
+{
+namespace can
+{
 
 ESP32TWAI::ESP32TWAI() :
   _lastErrorFunction(DriverStatus::INIT)
@@ -20,7 +26,7 @@ ESP32TWAI::~ESP32TWAI()
 
 esp_err_t ESP32TWAI::begin(gpio_num_t rxPin,
                            gpio_num_t txPin,
-                           TWAI_speed_s baud,
+                           Baudrate baud,
                            bool enableAlerts,
                            std::size_t rxQueueLength,
                            std::size_t txQueueLength)
@@ -36,27 +42,23 @@ esp_err_t ESP32TWAI::begin(gpio_num_t rxPin,
 
   switch(baud)
   {
-    case TWAI_SPEED_100KBPS:
+    case Baudrate::BAUD_100KBPS:
       configTiming = TWAI_TIMING_CONFIG_100KBITS();
       break;
-    case TWAI_SPEED_125KBPS:
+    case Baudrate::BAUD_125KBPS:
      configTiming = TWAI_TIMING_CONFIG_125KBITS();
       break;
-    case TWAI_SPEED_250KBPS:
+    case Baudrate::BAUD_250KBPS:
       configTiming = TWAI_TIMING_CONFIG_250KBITS();
       break;
-    case TWAI_SPEED_500KBPS:
+    case Baudrate::BAUD_500KBPS:
       configTiming = TWAI_TIMING_CONFIG_500KBITS();
       break;
-    case TWAI_SPEED_800KBPS:
+    case Baudrate::BAUD_800KBPS:
       configTiming = TWAI_TIMING_CONFIG_800KBITS();
       break;
-    case TWAI_SPEED_1MBPS:
+    case Baudrate::BAUD_1MBPS:
       configTiming = TWAI_TIMING_CONFIG_1MBITS();
-      break;
-    default:
-      _lastErrorFunction = DriverStatus::SPEED;
-      return ESP_ERR_NOT_SUPPORTED;
       break;
   }
 
@@ -80,12 +82,12 @@ esp_err_t ESP32TWAI::stop()
   return twai_driver_uninstall();
 }
 
-esp_err_t ESP32TWAI::write(TWAI_frame_type_s extd, uint32_t identifier, uint8_t length, uint8_t *buffer)
+esp_err_t ESP32TWAI::write(FrameType extd, uint32_t identifier, uint8_t length, uint8_t *buffer)
 {
   twai_message_t tx_frame {};
   tx_frame.rtr = 0;
   tx_frame.flags = 0;
-  tx_frame.extd = extd;                  // 0=11bit, 1=29bit
+  tx_frame.extd = (extd == FrameType::EXTD_FRAME) ? 1 : 0; // 0=11bit, 1=29bit
   tx_frame.data_length_code = length;
   tx_frame.identifier = identifier;
 
@@ -182,3 +184,6 @@ std::string ESP32TWAI::getErrorText(esp_err_t errNo) const
 
   return Stringify(_lastErrorFunction).append(esp_err_to_name(errNo));
 }
+
+} // namespace can
+} // namespace esp32

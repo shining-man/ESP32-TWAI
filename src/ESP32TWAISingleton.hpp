@@ -8,7 +8,10 @@
 
 #include <ESP32TWAI.h>
 
-// TODO: Would be nice to put this module into an own namespce
+namespace esp32
+{
+namespace can
+{
 
 /**
  * Provide a simple singleton wrapper for the ESP32TWAI class to support legacy code,
@@ -44,6 +47,9 @@ class ESP32TWAISingleton :
     }
 };
 
-#define CAN (ESP32TWAISingleton::getInstance())
+} // namespace can
+} // namespace esp32
+
+#define CAN (esp32::can::ESP32TWAISingleton::getInstance())
 
 #endif // INC_ESP32TWAISINGLETON_H
