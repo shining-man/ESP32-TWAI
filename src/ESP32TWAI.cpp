@@ -15,7 +15,7 @@ namespace can
 {
 
 ESP32TWAI::ESP32TWAI() :
-  _lastErrorFunction(DriverStatus::INIT)
+  _lastErrorFunction(DriverStatus::NONE)
 {
 }
 
@@ -177,8 +177,9 @@ std::string ESP32TWAI::getErrorText(esp_err_t errNo) const
         return std::string("TWAI SPEED: ");
       case DriverStatus::STATUS:
         return std::string("TWAI STATUS: ");
+      case DriverStatus::NONE:
       default:
-        return std::string(); // Return empty string
+        return std::string("UNKNOWN"); // No driver call executed yet.
     }
   };
 

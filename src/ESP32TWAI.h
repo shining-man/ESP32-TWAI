@@ -55,7 +55,7 @@ class ESP32TWAI
   private:
     enum class DriverStatus : uint8_t
     {
-      INIT           = 0x0,
+      NONE           = 0x0,
       DRIVER_INSTALL = 0x1,
       START          = 0x2,
       STOP           = 0x3,
